@@ -3,526 +3,977 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>アラーム</title>
+  <title>ポケモン図鑑 / Pokédex</title>
+  <meta name="description" content="世代ごとに整理されたポケモン図鑑。タイプ・名前で検索、ステータスや特性を確認できます。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23ee1515' stroke='%23222' stroke-width='4'/%3E%3Cpath d='M5 50h90' stroke='%23222' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23fff' stroke='%23222' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='6' fill='%23fff' stroke='%23222' stroke-width='3'/%3E%3C/svg%3E">
   <style>
     :root {
-      --bg: #0d0d14;
-      --surface: #16161f;
-      --surface2: #1e1e2a;
-      --border: #2a2a3a;
-      --accent: #7c6bff;
-      --accent2: #ff6b9d;
-      --text: #e8e8f0;
-      --text2: #8888a8;
-      --green: #4ade80;
-      --red: #f87171;
-      --yellow: #fbbf24;
+      --bg: #0f1115;
+      --surface: #171a22;
+      --surface2: #1f232e;
+      --surface3: #2a2f3d;
+      --border: #2c3142;
+      --border2: #3a4055;
+      --text: #ecedf3;
+      --text2: #9aa1b4;
+      --text3: #6b7185;
+      --accent: #ee1515;
+      --accent2: #ffcb05;
+      --shadow: 0 8px 24px rgba(0,0,0,.35);
+
+      --type-normal:   #a8a878;
+      --type-fire:     #f08030;
+      --type-water:    #6890f0;
+      --type-grass:    #78c850;
+      --type-electric: #f8d030;
+      --type-ice:      #98d8d8;
+      --type-fighting: #c03028;
+      --type-poison:   #a040a0;
+      --type-ground:   #e0c068;
+      --type-flying:   #a890f0;
+      --type-psychic:  #f85888;
+      --type-bug:      #a8b820;
+      --type-rock:     #b8a038;
+      --type-ghost:    #705898;
+      --type-dragon:   #7038f8;
+      --type-dark:     #705848;
+      --type-steel:    #b8b8d0;
+      --type-fairy:    #ee99ac;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    html, body { height: 100%; }
+
     body {
-      font-family: -apple-system, 'Helvetica Neue', sans-serif;
-      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic UI', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(238,21,21,.15), transparent 60%),
+        radial-gradient(1200px 600px at 110% 10%, rgba(255,203,5,.10), transparent 60%),
+        var(--bg);
       color: var(--text);
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container { max-width: 1280px; margin: 0 auto; padding: 28px 20px 80px; }
+
+    /* ── Header ── */
+    header {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      padding: 32px 16px 80px;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
     }
-
-    .clock-wrap {
-      text-align: center;
-      margin-bottom: 40px;
-      padding-top: 12px;
+    .brand {
+      display: flex; align-items: center; gap: 14px;
     }
-
-    #clock {
-      font-size: clamp(4rem, 18vw, 7rem);
-      font-weight: 200;
-      letter-spacing: -0.02em;
-      line-height: 1;
-      background: linear-gradient(135deg, #fff 40%, #a89dff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+    .pokeball {
+      width: 44px; height: 44px;
+      background:
+        radial-gradient(circle at 50% 50%, #fff 0 6px, #222 6px 9px, #fff 9px 12px, transparent 12px),
+        linear-gradient(180deg, var(--accent) 50%, #fff 50%);
+      border: 3px solid #1a1a1a;
+      border-radius: 50%;
+      position: relative;
+      box-shadow: var(--shadow);
     }
-
-    #date {
-      font-size: 0.95rem;
+    .pokeball::after {
+      content: ''; position: absolute; left: -3px; right: -3px; top: 50%; height: 3px;
+      background: #1a1a1a; transform: translateY(-50%);
+    }
+    h1 {
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      letter-spacing: .02em;
+    }
+    h1 small {
+      display: block;
+      font-size: .7em;
+      font-weight: 400;
       color: var(--text2);
-      margin-top: 10px;
-      letter-spacing: 0.04em;
+      letter-spacing: .15em;
+      text-transform: uppercase;
     }
-
-    .add-btn {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 50px;
-      padding: 14px 28px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin-bottom: 32px;
-      transition: transform 0.15s, box-shadow 0.15s;
-      box-shadow: 0 4px 20px rgba(124, 107, 255, 0.4);
+    .credit {
+      font-size: .8rem;
+      color: var(--text3);
     }
-    .add-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(124,107,255,0.5); }
-    .add-btn:active { transform: translateY(0); }
-    .add-btn svg { width: 18px; height: 18px; }
+    .credit a { color: var(--text2); text-decoration: none; border-bottom: 1px dashed var(--text3); }
+    .credit a:hover { color: var(--text); }
 
-    .alarm-list {
-      width: 100%;
-      max-width: 480px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    /* ── Generation tabs ── */
+    .gens {
+      display: flex; gap: 8px; overflow-x: auto;
+      padding: 4px 2px 12px;
+      margin-bottom: 12px;
+      scrollbar-width: thin;
     }
+    .gens::-webkit-scrollbar { height: 6px; }
+    .gens::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 6px; }
 
-    .alarm-card {
+    .gen-btn {
+      flex: 0 0 auto;
+      padding: 10px 16px;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 20px 22px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      transition: border-color 0.2s, opacity 0.2s;
-      animation: slideIn 0.25s ease;
-    }
-
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .alarm-card.off { opacity: 0.45; }
-    .alarm-card.active-ring {
-      border-color: var(--accent2);
-      box-shadow: 0 0 0 2px rgba(255,107,157,0.3);
-      animation: ringPulse 0.8s ease-in-out infinite;
-    }
-    @keyframes ringPulse {
-      0%,100% { box-shadow: 0 0 0 2px rgba(255,107,157,0.3); }
-      50%      { box-shadow: 0 0 0 6px rgba(255,107,157,0.0); }
-    }
-
-    .alarm-time-input {
-      font-size: 2.2rem;
-      font-weight: 300;
-      color: var(--text);
-      background: transparent;
-      border: none;
-      outline: none;
-      cursor: pointer;
-      width: 140px;
-      flex-shrink: 0;
-    }
-    .alarm-time-input::-webkit-calendar-picker-indicator {
-      filter: invert(0.5);
-      cursor: pointer;
-    }
-
-    .alarm-label-input {
-      font-size: 0.85rem;
+      border-radius: 12px;
       color: var(--text2);
-      background: transparent;
-      border: none;
-      outline: none;
-      width: 100%;
-      cursor: text;
-    }
-    .alarm-label-input::placeholder { color: var(--border); }
-
-    .alarm-days {
-      display: flex;
-      gap: 4px;
-      margin-top: 8px;
-      flex-wrap: wrap;
-    }
-    .day-btn {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text2);
-      font-size: 0.7rem;
+      font-size: .85rem;
       cursor: pointer;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      transition: all .15s ease;
+      white-space: nowrap;
+      display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+      min-width: 110px;
     }
-    .day-btn.on {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
+    .gen-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+    .gen-btn.active {
+      background: linear-gradient(135deg, var(--accent), #c11212);
+      color: #fff; border-color: transparent;
+      box-shadow: 0 6px 18px rgba(238,21,21,.35);
     }
+    .gen-btn .gen-name { font-weight: 600; font-size: .95rem; }
+    .gen-btn .gen-region { font-size: .72rem; opacity: .85; letter-spacing: .05em; }
 
-    .alarm-actions {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
+    /* ── Filters ── */
+    .filters {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
       gap: 10px;
-      flex-shrink: 0;
+      margin-bottom: 20px;
     }
-
-    .toggle {
+    @media (max-width: 640px) {
+      .filters { grid-template-columns: 1fr; }
+    }
+    .search {
       position: relative;
-      width: 46px;
-      height: 26px;
-      flex-shrink: 0;
     }
-    .toggle input { display: none; }
-    .toggle-track {
+    .search input {
+      width: 100%;
+      padding: 12px 14px 12px 42px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: .95rem;
+      transition: all .15s ease;
+    }
+    .search input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(238,21,21,.15);
+    }
+    .search::before {
+      content: '🔍';
       position: absolute;
-      inset: 0;
-      background: var(--border);
-      border-radius: 50px;
+      left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 1rem; opacity: .5;
+    }
+    .filter-select, .sort-select {
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: .9rem;
       cursor: pointer;
-      transition: background 0.2s;
+      min-width: 140px;
     }
-    .toggle input:checked + .toggle-track { background: var(--accent); }
-    .toggle-thumb {
-      position: absolute;
-      top: 3px;
-      left: 3px;
-      width: 20px;
-      height: 20px;
-      background: #fff;
+    .filter-select:focus, .sort-select:focus { outline: none; border-color: var(--border2); }
+
+    /* ── Status bar ── */
+    .status {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px;
+      color: var(--text2);
+      font-size: .85rem;
+      flex-wrap: wrap; gap: 8px;
+    }
+    .status .count { color: var(--text); font-weight: 600; }
+
+    /* ── Grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 12px 12px;
+      cursor: pointer;
+      transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+      overflow: hidden;
+      min-height: 200px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border2);
+      box-shadow: var(--shadow);
+    }
+    .card .id {
+      position: absolute; top: 10px; right: 12px;
+      font-size: .72rem; font-weight: 700;
+      color: var(--text3); letter-spacing: .05em;
+    }
+    .card .sprite-wrap {
+      width: 100%; height: 110px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 6px;
+      position: relative;
+    }
+    .card .sprite-wrap::before {
+      content: '';
+      position: absolute; inset: 12px 18px;
+      background: radial-gradient(ellipse at center, rgba(255,255,255,.06), transparent 70%);
       border-radius: 50%;
-      transition: transform 0.2s;
-      pointer-events: none;
+      z-index: 0;
     }
-    .toggle input:checked ~ .toggle-thumb { transform: translateX(20px); }
-
-    .delete-btn {
-      background: none;
-      border: none;
-      color: var(--text2);
-      cursor: pointer;
-      padding: 2px;
-      transition: color 0.15s;
-      line-height: 0;
+    .card img {
+      max-width: 100%; max-height: 100%;
+      image-rendering: -webkit-optimize-contrast;
+      filter: drop-shadow(0 6px 8px rgba(0,0,0,.35));
+      position: relative; z-index: 1;
+      transition: transform .2s ease;
     }
-    .delete-btn:hover { color: var(--red); }
+    .card:hover img { transform: scale(1.05); }
+    .card .name {
+      font-weight: 600; font-size: .95rem; text-align: center;
+      margin-top: 4px;
+      text-transform: capitalize;
+    }
+    .card .name-jp {
+      font-size: .78rem; color: var(--text2); text-align: center;
+      margin-top: 1px;
+    }
+    .card .types {
+      display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; justify-content: center;
+    }
+    .type-pill {
+      font-size: .65rem; padding: 3px 8px; border-radius: 999px;
+      color: #fff; text-transform: uppercase; font-weight: 700;
+      letter-spacing: .04em;
+      text-shadow: 0 1px 1px rgba(0,0,0,.25);
+    }
+    .card.skeleton { pointer-events: none; }
+    .card.skeleton .sprite-wrap { background: linear-gradient(90deg, transparent, rgba(255,255,255,.04), transparent); animation: shimmer 1.5s infinite; }
+    @keyframes shimmer {
+      0% { background-position: -200px 0; }
+      100% { background-position: 200px 0; }
+    }
 
+    /* ── Empty / Loading ── */
     .empty {
-      text-align: center;
+      text-align: center; padding: 60px 20px;
       color: var(--text2);
-      padding: 48px 0;
-      font-size: 0.95rem;
-      line-height: 1.8;
     }
-    .empty-icon { font-size: 3rem; display: block; margin-bottom: 12px; }
 
-    .modal-bg {
+    /* ── Modal ── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.7);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.75);
-      backdrop-filter: blur(8px);
-      z-index: 200;
-      justify-content: center;
-      align-items: center;
-      padding: 24px;
+      align-items: center; justify-content: center;
+      padding: 20px;
+      z-index: 100;
+      animation: fadeIn .15s ease;
     }
-    .modal-bg.show { display: flex; }
+    .modal-backdrop.open { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     .modal {
       background: var(--surface);
-      border: 1px solid rgba(255,107,157,0.3);
-      border-radius: 28px;
-      padding: 48px 36px 36px;
-      text-align: center;
-      width: 100%;
-      max-width: 340px;
-      animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      max-width: 720px; width: 100%;
+      max-height: 90vh; overflow-y: auto;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,.55);
     }
-    @keyframes modalIn {
-      from { transform: scale(0.8) translateY(20px); opacity: 0; }
-      to   { transform: scale(1) translateY(0); opacity: 1; }
-    }
-
-    .bell-anim {
-      font-size: 4rem;
-      display: block;
-      margin-bottom: 8px;
-      animation: bellShake 0.4s ease-in-out infinite;
-      transform-origin: top center;
-    }
-    @keyframes bellShake {
-      0%,100% { transform: rotate(0deg); }
-      20%      { transform: rotate(-18deg); }
-      60%      { transform: rotate(18deg); }
-    }
-
-    .modal h2 {
-      font-size: 3rem;
-      font-weight: 200;
-      margin-bottom: 4px;
-      background: linear-gradient(135deg, #fff, #ff6b9d);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .modal-label {
-      color: var(--text2);
-      font-size: 0.95rem;
-      margin-bottom: 32px;
-      min-height: 20px;
-    }
-
-    .modal-btns {
-      display: flex;
-      gap: 10px;
-    }
-    .btn-snooze {
-      flex: 1;
-      padding: 14px;
-      border-radius: 14px;
+    .modal-close {
+      position: absolute; top: 14px; right: 14px;
+      width: 36px; height: 36px;
+      border-radius: 50%;
       border: 1px solid var(--border);
       background: var(--surface2);
       color: var(--text);
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s;
+      cursor: pointer; font-size: 1.1rem;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 2;
     }
-    .btn-snooze:hover { background: var(--border); }
+    .modal-close:hover { background: var(--surface3); }
 
-    .btn-dismiss {
-      flex: 1;
-      padding: 14px;
-      border-radius: 14px;
-      border: none;
-      background: linear-gradient(135deg, #ff6b9d, #e63946);
-      color: #fff;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.15s;
-      box-shadow: 0 4px 16px rgba(255,107,157,0.35);
+    .modal-header {
+      padding: 28px 24px 20px;
+      background: linear-gradient(180deg, var(--type-bg, var(--surface2)) 0%, transparent 100%);
+      position: relative;
+      border-radius: 22px 22px 0 0;
     }
-    .btn-dismiss:hover { transform: translateY(-1px); }
+    .modal-header .id-big {
+      font-size: 3rem; font-weight: 800;
+      color: rgba(255,255,255,.08);
+      position: absolute; top: 18px; left: 22px;
+      letter-spacing: -.04em;
+    }
+    .modal-art {
+      display: flex; justify-content: center; align-items: center;
+      height: 200px;
+      position: relative;
+    }
+    .modal-art img {
+      max-height: 100%; max-width: 100%;
+      filter: drop-shadow(0 12px 20px rgba(0,0,0,.5));
+    }
+    .modal-title {
+      text-align: center; margin-top: 8px;
+    }
+    .modal-title .name {
+      font-size: 1.8rem; font-weight: 700; text-transform: capitalize;
+    }
+    .modal-title .name-jp {
+      font-size: 1.05rem; color: var(--text2);
+      margin-top: 2px;
+    }
+    .modal-title .genus {
+      font-size: .8rem; color: var(--text3); margin-top: 4px;
+    }
+    .modal-types {
+      display: flex; gap: 8px; justify-content: center;
+      margin-top: 12px;
+    }
+    .modal-types .type-pill { font-size: .75rem; padding: 5px 14px; }
 
-    .snooze-badge {
-      display: inline-block;
-      background: var(--yellow);
-      color: #000;
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 50px;
-      margin-left: 6px;
-      vertical-align: middle;
+    .modal-body {
+      padding: 8px 24px 28px;
+    }
+    .flavor {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: .9rem; line-height: 1.7;
+      color: var(--text);
+      margin: 16px 0 20px;
+    }
+    .meta-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 540px) { .meta-grid { grid-template-columns: repeat(2, 1fr); } }
+    .meta-cell {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+    .meta-cell .label {
+      font-size: .7rem; color: var(--text3); text-transform: uppercase; letter-spacing: .08em;
+    }
+    .meta-cell .value {
+      font-size: 1rem; font-weight: 600; margin-top: 2px;
     }
 
-    .next-alarm {
-      font-size: 0.8rem;
-      color: var(--text2);
+    .section-title {
+      font-size: .8rem; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--text2); margin: 16px 0 10px;
+    }
+
+    .abilities { display: flex; gap: 8px; flex-wrap: wrap; }
+    .ability {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: .85rem;
+      text-transform: capitalize;
+    }
+    .ability.hidden-ability {
+      border-color: var(--accent2);
+      color: var(--accent2);
+    }
+
+    .stats { display: flex; flex-direction: column; gap: 8px; }
+    .stat-row {
+      display: grid;
+      grid-template-columns: 80px 40px 1fr;
+      gap: 10px; align-items: center;
+    }
+    .stat-row .stat-label {
+      font-size: .8rem; color: var(--text2); text-transform: uppercase;
+    }
+    .stat-row .stat-value {
+      font-size: .9rem; font-weight: 700; text-align: right;
+    }
+    .bar {
+      height: 8px; background: var(--surface3); border-radius: 999px; overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 999px;
+      transition: width .5s ease;
+    }
+    .stat-row.total .stat-value { color: var(--accent2); }
+
+    /* Type colors */
+    .t-normal { background: var(--type-normal); }
+    .t-fire { background: var(--type-fire); }
+    .t-water { background: var(--type-water); }
+    .t-grass { background: var(--type-grass); }
+    .t-electric { background: var(--type-electric); color: #2a2a2a !important; text-shadow: none !important; }
+    .t-ice { background: var(--type-ice); color: #2a2a2a !important; text-shadow: none !important; }
+    .t-fighting { background: var(--type-fighting); }
+    .t-poison { background: var(--type-poison); }
+    .t-ground { background: var(--type-ground); color: #2a2a2a !important; text-shadow: none !important; }
+    .t-flying { background: var(--type-flying); }
+    .t-psychic { background: var(--type-psychic); }
+    .t-bug { background: var(--type-bug); }
+    .t-rock { background: var(--type-rock); }
+    .t-ghost { background: var(--type-ghost); }
+    .t-dragon { background: var(--type-dragon); }
+    .t-dark { background: var(--type-dark); }
+    .t-steel { background: var(--type-steel); color: #2a2a2a !important; text-shadow: none !important; }
+    .t-fairy { background: var(--type-fairy); }
+
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 24px auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      margin-top: 60px;
       text-align: center;
-      margin-top: 16px;
+      color: var(--text3);
+      font-size: .8rem;
     }
-    .next-alarm span { color: var(--accent); font-weight: 600; }
+    footer a { color: var(--text2); text-decoration: none; }
+    footer a:hover { color: var(--text); }
   </style>
 </head>
 <body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="pokeball" aria-hidden="true"></div>
+        <h1>
+          ポケモン図鑑
+          <small>Pokédex</small>
+        </h1>
+      </div>
+      <div class="credit">
+        Data: <a href="https://pokeapi.co" target="_blank" rel="noopener">PokéAPI</a>
+      </div>
+    </header>
 
-<div class="clock-wrap">
-  <div id="clock">00:00:00</div>
-  <div id="date"></div>
-</div>
+    <nav class="gens" id="gens" aria-label="世代"></nav>
 
-<button class="add-btn" onclick="addAlarm()">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>
-  アラームを追加
-</button>
+    <div class="filters">
+      <div class="search">
+        <input id="search" type="search" placeholder="名前 / 番号で検索（例: ピカチュウ, pikachu, 25）" autocomplete="off">
+      </div>
+      <select class="filter-select" id="typeFilter">
+        <option value="">すべてのタイプ</option>
+      </select>
+      <select class="sort-select" id="sortSelect">
+        <option value="id">図鑑番号順</option>
+        <option value="id-desc">図鑑番号順（降順）</option>
+        <option value="name">名前順 (A→Z)</option>
+        <option value="name-desc">名前順 (Z→A)</option>
+      </select>
+    </div>
 
-<div class="alarm-list" id="alarm-list"></div>
-<div class="next-alarm" id="next-alarm"></div>
+    <div class="status">
+      <div><span class="count" id="visibleCount">0</span> 匹</div>
+      <div id="genLabel"></div>
+    </div>
 
-<div class="modal-bg" id="modal">
-  <div class="modal">
-    <span class="bell-anim">🔔</span>
-    <h2 id="modal-time">--:--</h2>
-    <div class="modal-label" id="modal-label"></div>
-    <div class="modal-btns">
-      <button class="btn-snooze" onclick="snooze()">スヌーズ<span class="snooze-badge">5分</span></button>
-      <button class="btn-dismiss" onclick="dismiss()">止める</button>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="empty" style="display:none;">該当するポケモンが見つかりませんでした。</div>
+
+    <footer>
+      Pokémon and all related media © Nintendo / Game Freak / Creatures Inc.<br>
+      This is an unofficial fan-made Pokédex powered by <a href="https://pokeapi.co" target="_blank" rel="noopener">PokéAPI</a>.
+    </footer>
+  </div>
+
+  <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalName">
+    <div class="modal" id="modalContent">
+      <button class="modal-close" id="modalClose" aria-label="閉じる">✕</button>
+      <div class="modal-header" id="modalHeader">
+        <div class="id-big" id="modalIdBig"></div>
+        <div class="modal-art"><img id="modalArt" alt=""></div>
+        <div class="modal-title">
+          <div class="name" id="modalName"></div>
+          <div class="name-jp" id="modalNameJp"></div>
+          <div class="genus" id="modalGenus"></div>
+        </div>
+        <div class="modal-types" id="modalTypes"></div>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
     </div>
   </div>
-</div>
 
-<script>
-  const DAY_LABELS = ['日','月','火','水','木','金','土'];
-  let alarms = JSON.parse(localStorage.getItem('alarms') || '[]');
-  let ringingId = null;
-  let audioCtx = null;
-  let beepInterval = null;
-  let snoozeTimeout = null;
+  <script>
+    // ── Constants ──────────────────────────────────────────────
+    const API = 'https://pokeapi.co/api/v2';
+    const ART = id => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+    const SPRITE = id => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
 
-  function save() {
-    localStorage.setItem('alarms', JSON.stringify(alarms));
-  }
+    const GENERATIONS = [
+      { id: 1, name: 'Generation I',   region: 'カントー',  start: 1,   end: 151 },
+      { id: 2, name: 'Generation II',  region: 'ジョウト',  start: 152, end: 251 },
+      { id: 3, name: 'Generation III', region: 'ホウエン',  start: 252, end: 386 },
+      { id: 4, name: 'Generation IV',  region: 'シンオウ',  start: 387, end: 493 },
+      { id: 5, name: 'Generation V',   region: 'イッシュ',  start: 494, end: 649 },
+      { id: 6, name: 'Generation VI',  region: 'カロス',    start: 650, end: 721 },
+      { id: 7, name: 'Generation VII', region: 'アローラ',  start: 722, end: 809 },
+      { id: 8, name: 'Generation VIII',region: 'ガラル',    start: 810, end: 905 },
+      { id: 9, name: 'Generation IX',  region: 'パルデア',  start: 906, end: 1025 },
+    ];
 
-  function beep() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    [0, 200, 400, 700].forEach(ms => {
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.connect(g); g.connect(audioCtx.destination);
-      o.frequency.value = 1040; o.type = 'sine';
-      const t = audioCtx.currentTime + ms / 1000;
-      g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.35, t + 0.04);
-      g.gain.linearRampToValueAtTime(0, t + 0.18);
-      o.start(t); o.stop(t + 0.2);
-    });
-  }
+    const TYPES = [
+      'normal','fire','water','grass','electric','ice','fighting','poison',
+      'ground','flying','psychic','bug','rock','ghost','dragon','dark','steel','fairy'
+    ];
+    const TYPE_JP = {
+      normal:'ノーマル', fire:'ほのお', water:'みず', grass:'くさ', electric:'でんき',
+      ice:'こおり', fighting:'かくとう', poison:'どく', ground:'じめん', flying:'ひこう',
+      psychic:'エスパー', bug:'むし', rock:'いわ', ghost:'ゴースト', dragon:'ドラゴン',
+      dark:'あく', steel:'はがね', fairy:'フェアリー'
+    };
+    const STAT_JP = {
+      'hp':'HP', 'attack':'こうげき', 'defense':'ぼうぎょ',
+      'special-attack':'とくこう', 'special-defense':'とくぼう', 'speed':'すばやさ'
+    };
 
-  function startBeeping() { beep(); beepInterval = setInterval(beep, 1400); }
-  function stopBeeping()  { clearInterval(beepInterval); beepInterval = null; }
+    // ── Cache (in-memory + localStorage) ───────────────────────
+    const memCache = new Map();
+    const inflight = new Map(); // url -> Promise (de-duplicate concurrent requests)
+    const LS_PREFIX = 'pkdx-v2-';
+    const LS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-  function tick() {
-    const now = new Date();
-    const h = pad(now.getHours()), m = pad(now.getMinutes()), s = pad(now.getSeconds());
-    document.getElementById('clock').textContent = `${h}:${m}:${s}`;
-    document.getElementById('date').textContent =
-      `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${DAY_LABELS[now.getDay()]}）`;
-
-    if (s === '00' && ringingId === null) checkAlarms(h, m, now.getDay());
-    updateNextAlarm();
-  }
-
-  function pad(n) { return String(n).padStart(2,'0'); }
-
-  function checkAlarms(h, m, dayIdx) {
-    const current = `${h}:${m}`;
-    alarms.forEach(a => {
-      if (!a.on) return;
-      if (a.days.length > 0 && !a.days.includes(dayIdx)) return;
-      if (a.time === current) triggerAlarm(a.id);
-    });
-  }
-
-  function triggerAlarm(id) {
-    ringingId = id;
-    const a = alarms.find(x => x.id === id);
-    document.getElementById('modal-time').textContent = a ? a.time : '--:--';
-    document.getElementById('modal-label').textContent = a?.label || '';
-    document.getElementById('modal').classList.add('show');
-    document.querySelectorAll('.alarm-card').forEach(el => {
-      if (el.dataset.id === String(id)) el.classList.add('active-ring');
-    });
-    startBeeping();
-  }
-
-  function dismiss() {
-    stopBeeping();
-    document.getElementById('modal').classList.remove('show');
-    document.querySelectorAll('.alarm-card').forEach(el => el.classList.remove('active-ring'));
-    const a = alarms.find(x => x.id === ringingId);
-    if (a && a.days.length === 0) { a.on = false; save(); render(); }
-    ringingId = null;
-  }
-
-  function snooze() {
-    stopBeeping();
-    document.getElementById('modal').classList.remove('show');
-    document.querySelectorAll('.alarm-card').forEach(el => el.classList.remove('active-ring'));
-    const id = ringingId;
-    ringingId = null;
-    snoozeTimeout = setTimeout(() => triggerAlarm(id), 5 * 60 * 1000);
-  }
-
-  function updateNextAlarm() {
-    const now = new Date();
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-    let min = Infinity, label = '';
-    alarms.filter(a => a.on).forEach(a => {
-      const [ah, am] = a.time.split(':').map(Number);
-      const alarmMin = ah * 60 + am;
-      let diff = alarmMin - nowMin;
-      if (diff <= 0) diff += 1440;
-      if (diff < min) { min = diff; label = a.time + (a.label ? ` (${a.label})` : ''); }
-    });
-    const el = document.getElementById('next-alarm');
-    if (min < Infinity) {
-      const h = Math.floor(min / 60), m = min % 60;
-      const until = h > 0 ? `${h}時間${m}分後` : `${m}分後`;
-      el.innerHTML = `次のアラームまで <span>${until} — ${label}</span>`;
-    } else {
-      el.textContent = '';
+    function lsGet(key) {
+      try {
+        const raw = localStorage.getItem(LS_PREFIX + key);
+        if (!raw) return null;
+        const obj = JSON.parse(raw);
+        if (Date.now() - obj.t > LS_TTL_MS) { localStorage.removeItem(LS_PREFIX + key); return null; }
+        return obj.d;
+      } catch { return null; }
     }
-  }
-
-  function addAlarm() {
-    const now = new Date();
-    const h = pad(now.getHours()), m = pad(now.getMinutes());
-    alarms.push({ id: Date.now(), time: `${h}:${m}`, label: '', days: [], on: true });
-    save(); render();
-  }
-
-  function render() {
-    const list = document.getElementById('alarm-list');
-    if (alarms.length === 0) {
-      list.innerHTML = `<div class="empty"><span class="empty-icon">⏰</span>アラームがありません<br>上のボタンで追加してください</div>`;
-      return;
+    function lsSet(key, data) {
+      try { localStorage.setItem(LS_PREFIX + key, JSON.stringify({ t: Date.now(), d: data })); }
+      catch { /* quota */ }
     }
-    list.innerHTML = alarms.map(a => `
-      <div class="alarm-card ${a.on ? '' : 'off'}" data-id="${a.id}">
-        <div style="flex:1;min-width:0">
-          <input class="alarm-time-input" type="time" value="${a.time}"
-            onchange="updateTime(${a.id}, this.value)">
-          <input class="alarm-label-input" type="text" placeholder="ラベル（任意）"
-            value="${a.label}" onchange="updateLabel(${a.id}, this.value)">
-          <div class="alarm-days">
-            ${DAY_LABELS.map((d,i) => `
-              <button class="day-btn ${a.days.includes(i)?'on':''}"
-                onclick="toggleDay(${a.id},${i})">${d}</button>
+
+    // Concurrency limiter — keep parallel network requests modest.
+    const MAX_CONCURRENT = 6;
+    let active = 0;
+    const queue = [];
+    function withLimit(fn) {
+      return new Promise((resolve, reject) => {
+        const run = () => {
+          active++;
+          fn().then(resolve, reject).finally(() => {
+            active--;
+            const next = queue.shift();
+            if (next) next();
+          });
+        };
+        if (active < MAX_CONCURRENT) run();
+        else queue.push(run);
+      });
+    }
+
+    async function fetchJson(url, retries = 3) {
+      if (memCache.has(url)) return memCache.get(url);
+      const ls = lsGet(url);
+      if (ls) { memCache.set(url, ls); return ls; }
+      if (inflight.has(url)) return inflight.get(url);
+
+      const p = withLimit(async () => {
+        let lastErr;
+        for (let i = 0; i <= retries; i++) {
+          try {
+            const res = await fetch(url);
+            if (res.status === 429 || res.status >= 500) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const slimmed = slim(url, data);
+            memCache.set(url, slimmed === data ? data : slimmed);
+            lsSet(url, slimmed);
+            return memCache.get(url);
+          } catch (e) {
+            lastErr = e;
+            if (i < retries) {
+              const delay = 400 * Math.pow(2, i) + Math.random() * 200;
+              await new Promise(r => setTimeout(r, delay));
+            }
+          }
+        }
+        throw lastErr;
+      }).finally(() => inflight.delete(url));
+      inflight.set(url, p);
+      return p;
+    }
+    // Trim the parts we don't need to keep localStorage small.
+    function slim(url, d) {
+      if (url.includes('/pokemon/') && !url.includes('-species')) {
+        return {
+          id: d.id, name: d.name, height: d.height, weight: d.weight,
+          types: d.types.map(t => ({ type: { name: t.type.name } })),
+          abilities: d.abilities.map(a => ({ ability: { name: a.ability.name }, is_hidden: a.is_hidden })),
+          stats: d.stats.map(s => ({ base_stat: s.base_stat, stat: { name: s.stat.name } })),
+        };
+      }
+      if (url.includes('/pokemon-species/')) {
+        // Prefer ja-Hrkt (katakana/hiragana) first; fall back to ja (may include kanji).
+        const names = d.names || [];
+        const ja = names.find(n => n.language.name === 'ja-Hrkt')
+                || names.find(n => n.language.name === 'ja');
+        const genera = d.genera || [];
+        const genusJa = genera.find(g => g.language.name === 'ja-Hrkt')
+                     || genera.find(g => g.language.name === 'ja');
+        const flavors = d.flavor_text_entries || [];
+        const flavorJa = flavors.find(f => f.language.name === 'ja-Hrkt')
+                      || flavors.find(f => f.language.name === 'ja');
+        return {
+          id: d.id,
+          name_ja: ja ? ja.name : '',
+          genus_ja: genusJa ? genusJa.genus : '',
+          flavor_ja: flavorJa ? flavorJa.flavor_text.replace(/[\f\n\r]/g, ' ') : '',
+        };
+      }
+      return d;
+    }
+
+    // ── State ──────────────────────────────────────────────────
+    const state = {
+      gen: GENERATIONS[0],
+      search: '',
+      typeFilter: '',
+      sort: 'id',
+      pokemon: [],   // raw pokemon objects (loaded lazily)
+      species: new Map(), // id -> species data
+    };
+
+    // ── DOM ────────────────────────────────────────────────────
+    const $gens = document.getElementById('gens');
+    const $grid = document.getElementById('grid');
+    const $empty = document.getElementById('empty');
+    const $search = document.getElementById('search');
+    const $typeFilter = document.getElementById('typeFilter');
+    const $sortSelect = document.getElementById('sortSelect');
+    const $count = document.getElementById('visibleCount');
+    const $genLabel = document.getElementById('genLabel');
+    const $modal = document.getElementById('modal');
+    const $modalClose = document.getElementById('modalClose');
+
+    // ── Init ───────────────────────────────────────────────────
+    function init() {
+      // Generation tabs
+      GENERATIONS.forEach(g => {
+        const b = document.createElement('button');
+        b.className = 'gen-btn' + (g.id === state.gen.id ? ' active' : '');
+        b.dataset.gen = g.id;
+        b.innerHTML = `<span class="gen-name">第${toRoman(g.id)}世代</span><span class="gen-region">${g.region}</span>`;
+        b.addEventListener('click', () => selectGen(g));
+        $gens.appendChild(b);
+      });
+
+      // Type filter
+      TYPES.forEach(t => {
+        const o = document.createElement('option');
+        o.value = t;
+        o.textContent = `${TYPE_JP[t]} (${t})`;
+        $typeFilter.appendChild(o);
+      });
+
+      $search.addEventListener('input', e => { state.search = e.target.value.trim().toLowerCase(); render(); });
+      $typeFilter.addEventListener('change', e => { state.typeFilter = e.target.value; render(); });
+      $sortSelect.addEventListener('change', e => { state.sort = e.target.value; render(); });
+
+      $modalClose.addEventListener('click', closeModal);
+      $modal.addEventListener('click', e => { if (e.target === $modal) closeModal(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+      loadGen(state.gen);
+    }
+
+    function toRoman(n) {
+      const r = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
+      return r[n - 1] || String(n);
+    }
+
+    function selectGen(g) {
+      state.gen = g;
+      [...$gens.querySelectorAll('.gen-btn')].forEach(b => {
+        b.classList.toggle('active', Number(b.dataset.gen) === g.id);
+      });
+      loadGen(g);
+    }
+
+    // ── Load ───────────────────────────────────────────────────
+    function loadGen(g) {
+      $genLabel.textContent = `${g.name} · ${g.region}地方 · #${String(g.start).padStart(4,'0')}〜#${String(g.end).padStart(4,'0')}`;
+      // Build placeholder list of IDs
+      state.pokemon = [];
+      for (let i = g.start; i <= g.end; i++) {
+        state.pokemon.push({ id: i, name: '', types: [], _loaded: false });
+      }
+      render();
+    }
+
+    // ── Render ─────────────────────────────────────────────────
+    function render() {
+      const filtered = filterAndSort(state.pokemon);
+      $count.textContent = filtered.length;
+      $empty.style.display = filtered.length === 0 ? 'block' : 'none';
+      $grid.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      filtered.forEach(p => frag.appendChild(buildCard(p)));
+      $grid.appendChild(frag);
+      observeCards();
+    }
+
+    function filterAndSort(list) {
+      let out = list;
+      const q = state.search;
+      if (q) {
+        out = out.filter(p => {
+          if (String(p.id) === q || String(p.id).padStart(4,'0').includes(q)) return true;
+          if (p.name && p.name.includes(q)) return true;
+          const sp = state.species.get(p.id);
+          if (sp && sp.name_ja && sp.name_ja.includes(q)) return true;
+          // If not loaded yet, allow it through so filtering refines as data loads.
+          return !p._loaded;
+        });
+      }
+      if (state.typeFilter) {
+        out = out.filter(p => {
+          if (!p._loaded) return true; // optimistic
+          return p.types.some(t => t === state.typeFilter);
+        });
+      }
+      const sort = state.sort;
+      out = [...out].sort((a, b) => {
+        if (sort === 'id') return a.id - b.id;
+        if (sort === 'id-desc') return b.id - a.id;
+        if (sort === 'name') return (a.name || '').localeCompare(b.name || '');
+        if (sort === 'name-desc') return (b.name || '').localeCompare(a.name || '');
+        return 0;
+      });
+      return out;
+    }
+
+    function buildCard(p) {
+      const card = document.createElement('div');
+      card.className = 'card' + (p._loaded ? '' : ' skeleton');
+      card.dataset.id = p.id;
+      card.innerHTML = `
+        <div class="id">#${String(p.id).padStart(4,'0')}</div>
+        <div class="sprite-wrap"><img loading="lazy" decoding="async" alt=""></div>
+        <div class="name"></div>
+        <div class="name-jp"></div>
+        <div class="types"></div>
+      `;
+      const img = card.querySelector('img');
+      img.src = ART(p.id);
+      img.onerror = () => { img.onerror = null; img.src = SPRITE(p.id); };
+
+      if (p._loaded) {
+        fillCard(card, p);
+      }
+      card.addEventListener('click', () => openModal(p.id));
+      return card;
+    }
+
+    function fillCard(card, p) {
+      card.classList.remove('skeleton');
+      const sp = state.species.get(p.id);
+      const nameJa = sp && sp.name_ja ? sp.name_ja : '';
+      card.querySelector('.name').textContent = nameJa || p.name.replace(/-/g, ' ');
+      card.querySelector('.name-jp').textContent = nameJa ? p.name.replace(/-/g, ' ') : '';
+      const types = card.querySelector('.types');
+      types.innerHTML = p.types.map(t => `<span class="type-pill t-${t}">${TYPE_JP[t] || t}</span>`).join('');
+    }
+
+    // ── Lazy load via IntersectionObserver ─────────────────────
+    let io;
+    function observeCards() {
+      if (io) io.disconnect();
+      io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          const card = entry.target;
+          io.unobserve(card);
+          const id = Number(card.dataset.id);
+          loadCardData(id, card);
+        });
+      }, { rootMargin: '200px' });
+      [...$grid.querySelectorAll('.card.skeleton')].forEach(c => io.observe(c));
+    }
+
+    async function loadCardData(id, card) {
+      const p = state.pokemon.find(x => x.id === id);
+      if (!p) return;
+
+      // Pokemon data (types/stats/etc).
+      try {
+        const pdata = await fetchJson(`${API}/pokemon/${id}`);
+        p.name = pdata.name;
+        p.types = pdata.types.map(t => t.type.name);
+        p.height = pdata.height;
+        p.weight = pdata.weight;
+        p.abilities = pdata.abilities;
+        p.stats = pdata.stats;
+        p._loaded = true;
+      } catch (e) {
+        console.warn('pokemon load failed', id, e);
+      }
+
+      // Species data (Japanese name) — try with extra retries since the JP
+      // name is the primary display. If it still fails, fall back to English.
+      let sdata = null;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          sdata = await fetchJson(`${API}/pokemon-species/${id}`);
+          if (sdata && sdata.name_ja) break;
+        } catch (e) {
+          // backoff handled inside fetchJson, plus an extra wait between attempts
+          await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
+        }
+      }
+      if (sdata) state.species.set(id, sdata);
+
+      if (p._loaded) {
+        fillCard(card, p);
+        if (!matchesFilters(p)) card.style.display = 'none';
+      }
+    }
+
+    function matchesFilters(p) {
+      const q = state.search;
+      if (q) {
+        const sp = state.species.get(p.id);
+        const ok = (
+          String(p.id) === q ||
+          String(p.id).padStart(4,'0').includes(q) ||
+          (p.name && p.name.includes(q)) ||
+          (sp && sp.name_ja && sp.name_ja.includes(q))
+        );
+        if (!ok) return false;
+      }
+      if (state.typeFilter && !p.types.includes(state.typeFilter)) return false;
+      return true;
+    }
+
+    // ── Modal ──────────────────────────────────────────────────
+    async function openModal(id) {
+      $modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      const $body = document.getElementById('modalBody');
+      const $art = document.getElementById('modalArt');
+      const $name = document.getElementById('modalName');
+      const $nameJp = document.getElementById('modalNameJp');
+      const $genus = document.getElementById('modalGenus');
+      const $idBig = document.getElementById('modalIdBig');
+      const $types = document.getElementById('modalTypes');
+      const $header = document.getElementById('modalHeader');
+
+      $art.src = ART(id);
+      $art.onerror = () => { $art.onerror = null; $art.src = SPRITE(id); };
+      $idBig.textContent = `#${String(id).padStart(4,'0')}`;
+      $name.textContent = '...';
+      $nameJp.textContent = '';
+      $genus.textContent = '';
+      $types.innerHTML = '';
+      $body.innerHTML = '<div class="spinner"></div>';
+
+      try {
+        const [pdata, sdata] = await Promise.all([
+          fetchJson(`${API}/pokemon/${id}`),
+          fetchJson(`${API}/pokemon-species/${id}`),
+        ]);
+        const types = pdata.types.map(t => t.type.name);
+        $name.textContent = sdata.name_ja || pdata.name.replace(/-/g, ' ');
+        $nameJp.textContent = sdata.name_ja ? pdata.name.replace(/-/g, ' ') : '';
+        $genus.textContent = sdata.genus_ja || '';
+        $types.innerHTML = types.map(t => `<span class="type-pill t-${t}">${TYPE_JP[t] || t}</span>`).join('');
+        $header.style.setProperty('--type-bg', `var(--type-${types[0]})`);
+        $header.style.background = `linear-gradient(180deg, color-mix(in srgb, var(--type-${types[0]}) 35%, transparent) 0%, transparent 100%)`;
+
+        const totalStat = pdata.stats.reduce((a,s) => a + s.base_stat, 0);
+        const heightM = (pdata.height / 10).toFixed(1);
+        const weightKg = (pdata.weight / 10).toFixed(1);
+
+        $body.innerHTML = `
+          ${sdata.flavor_ja ? `<div class="flavor">${escapeHtml(sdata.flavor_ja)}</div>` : ''}
+          <div class="meta-grid">
+            <div class="meta-cell"><div class="label">高さ Height</div><div class="value">${heightM} m</div></div>
+            <div class="meta-cell"><div class="label">重さ Weight</div><div class="value">${weightKg} kg</div></div>
+            <div class="meta-cell"><div class="label">図鑑番号</div><div class="value">#${String(id).padStart(4,'0')}</div></div>
+          </div>
+
+          <div class="section-title">特性 Abilities</div>
+          <div class="abilities">
+            ${pdata.abilities.map(a => `
+              <span class="ability${a.is_hidden ? ' hidden-ability' : ''}">
+                ${a.ability.name.replace(/-/g, ' ')}${a.is_hidden ? ' ✦' : ''}
+              </span>
             `).join('')}
           </div>
-        </div>
-        <div class="alarm-actions">
-          <label class="toggle">
-            <input type="checkbox" ${a.on?'checked':''} onchange="toggleOn(${a.id}, this.checked)">
-            <div class="toggle-track"></div>
-            <div class="toggle-thumb"></div>
-          </label>
-          <button class="delete-btn" onclick="deleteAlarm(${a.id})" title="削除">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-    `).join('');
-  }
 
-  function updateTime(id, val)  { const a = alarms.find(x=>x.id===id); if(a){a.time=val; save(); updateNextAlarm();} }
-  function updateLabel(id, val) { const a = alarms.find(x=>x.id===id); if(a){a.label=val; save();} }
-  function toggleOn(id, val)    { const a = alarms.find(x=>x.id===id); if(a){a.on=val; save(); render();} }
-  function deleteAlarm(id)      { alarms = alarms.filter(x=>x.id!==id); save(); render(); }
-  function toggleDay(id, day) {
-    const a = alarms.find(x=>x.id===id);
-    if (!a) return;
-    const i = a.days.indexOf(day);
-    if (i >= 0) a.days.splice(i,1); else a.days.push(day);
-    save(); render();
-  }
+          <div class="section-title">種族値 Base Stats</div>
+          <div class="stats">
+            ${pdata.stats.map(s => {
+              const pct = Math.min(100, (s.base_stat / 200) * 100);
+              return `
+                <div class="stat-row">
+                  <div class="stat-label">${STAT_JP[s.stat.name] || s.stat.name}</div>
+                  <div class="stat-value">${s.base_stat}</div>
+                  <div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div>
+                </div>
+              `;
+            }).join('')}
+            <div class="stat-row total">
+              <div class="stat-label">合計</div>
+              <div class="stat-value">${totalStat}</div>
+              <div class="bar"><div class="bar-fill" style="width:${Math.min(100, (totalStat / 720) * 100)}%"></div></div>
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        $body.innerHTML = `<div class="empty">データの取得に失敗しました。</div>`;
+        console.error(e);
+      }
+    }
 
-  render();
-  setInterval(tick, 1000);
-  tick();
-</script>
+    function closeModal() {
+      $modal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[c]));
+    }
+
+    // ── Go ────────────────────────────────────────────────────
+    init();
+  </script>
 </body>
 </html>
