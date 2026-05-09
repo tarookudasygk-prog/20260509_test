@@ -3,350 +3,526 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>アラームアプリ</title>
+  <title>アラーム</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    :root {
+      --bg: #0d0d14;
+      --surface: #16161f;
+      --surface2: #1e1e2a;
+      --border: #2a2a3a;
+      --accent: #7c6bff;
+      --accent2: #ff6b9d;
+      --text: #e8e8f0;
+      --text2: #8888a8;
+      --green: #4ade80;
+      --red: #f87171;
+      --yellow: #fbbf24;
     }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      background: #1a1a2e;
-      color: #eee;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      font-family: -apple-system, 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px 80px;
     }
 
-    .container {
+    .clock-wrap {
       text-align: center;
-      padding: 40px;
-      background: #16213e;
-      border-radius: 20px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-      width: 360px;
-    }
-
-    h1 {
-      font-size: 1.4rem;
-      font-weight: 400;
-      color: #a0aec0;
-      margin-bottom: 24px;
-      letter-spacing: 0.1em;
+      margin-bottom: 40px;
+      padding-top: 12px;
     }
 
     #clock {
-      font-size: 4rem;
-      font-weight: 300;
-      letter-spacing: 0.05em;
-      color: #e2e8f0;
-      margin-bottom: 8px;
+      font-size: clamp(4rem, 18vw, 7rem);
+      font-weight: 200;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      background: linear-gradient(135deg, #fff 40%, #a89dff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     #date {
-      font-size: 0.9rem;
-      color: #718096;
-      margin-bottom: 40px;
+      font-size: 0.95rem;
+      color: var(--text2);
+      margin-top: 10px;
+      letter-spacing: 0.04em;
     }
 
-    .alarm-section {
-      background: #0f3460;
-      border-radius: 14px;
-      padding: 24px;
-      margin-bottom: 20px;
-    }
-
-    .alarm-section label {
-      display: block;
-      font-size: 0.8rem;
-      color: #a0aec0;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin-bottom: 12px;
-    }
-
-    #alarm-time {
-      width: 100%;
-      font-size: 2rem;
-      text-align: center;
-      background: transparent;
+    .add-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      color: #fff;
       border: none;
-      border-bottom: 2px solid #4a5568;
-      color: #e2e8f0;
-      padding: 8px 0;
-      outline: none;
-      cursor: pointer;
-      transition: border-color 0.2s;
-    }
-
-    #alarm-time:focus {
-      border-color: #667eea;
-    }
-
-    #alarm-time::-webkit-calendar-picker-indicator {
-      filter: invert(1);
-      opacity: 0.5;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 14px;
-      border: none;
-      border-radius: 10px;
+      border-radius: 50px;
+      padding: 14px 28px;
       font-size: 1rem;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
-      letter-spacing: 0.05em;
+      margin-bottom: 32px;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 20px rgba(124, 107, 255, 0.4);
+    }
+    .add-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(124,107,255,0.5); }
+    .add-btn:active { transform: translateY(0); }
+    .add-btn svg { width: 18px; height: 18px; }
+
+    .alarm-list {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
-    .btn-set {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      margin-bottom: 12px;
+    .alarm-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: border-color 0.2s, opacity 0.2s;
+      animation: slideIn 0.25s ease;
     }
 
-    .btn-set:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
-    .btn-set:active {
-      transform: translateY(0);
+    .alarm-card.off { opacity: 0.45; }
+    .alarm-card.active-ring {
+      border-color: var(--accent2);
+      box-shadow: 0 0 0 2px rgba(255,107,157,0.3);
+      animation: ringPulse 0.8s ease-in-out infinite;
+    }
+    @keyframes ringPulse {
+      0%,100% { box-shadow: 0 0 0 2px rgba(255,107,157,0.3); }
+      50%      { box-shadow: 0 0 0 6px rgba(255,107,157,0.0); }
     }
 
-    .btn-cancel {
-      background: #2d3748;
-      color: #a0aec0;
+    .alarm-time-input {
+      font-size: 2.2rem;
+      font-weight: 300;
+      color: var(--text);
+      background: transparent;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      width: 140px;
+      flex-shrink: 0;
+    }
+    .alarm-time-input::-webkit-calendar-picker-indicator {
+      filter: invert(0.5);
+      cursor: pointer;
     }
 
-    .btn-cancel:hover {
-      background: #4a5568;
+    .alarm-label-input {
+      font-size: 0.85rem;
+      color: var(--text2);
+      background: transparent;
+      border: none;
+      outline: none;
+      width: 100%;
+      cursor: text;
     }
+    .alarm-label-input::placeholder { color: var(--border); }
 
-    #status {
-      margin-top: 20px;
-      padding: 12px 16px;
-      border-radius: 10px;
-      font-size: 0.9rem;
-      min-height: 44px;
+    .alarm-days {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .day-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.15s;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.3s;
+    }
+    .day-btn.on {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
     }
 
-    .status-set {
-      background: rgba(102, 126, 234, 0.15);
-      border: 1px solid rgba(102, 126, 234, 0.3);
-      color: #a3b3f7;
+    .alarm-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      flex-shrink: 0;
     }
 
-    .status-idle {
-      background: transparent;
-      color: #4a5568;
+    .toggle {
+      position: relative;
+      width: 46px;
+      height: 26px;
+      flex-shrink: 0;
     }
-
-    .status-ringing {
-      background: rgba(252, 129, 74, 0.15);
-      border: 1px solid rgba(252, 129, 74, 0.4);
-      color: #fc814a;
-      animation: pulse 0.8s ease-in-out infinite;
+    .toggle input { display: none; }
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: 50px;
+      cursor: pointer;
+      transition: background 0.2s;
     }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+    .toggle input:checked + .toggle-track { background: var(--accent); }
+    .toggle-thumb {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      pointer-events: none;
     }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(20px); }
 
-    .ringing-overlay {
+    .delete-btn {
+      background: none;
+      border: none;
+      color: var(--text2);
+      cursor: pointer;
+      padding: 2px;
+      transition: color 0.15s;
+      line-height: 0;
+    }
+    .delete-btn:hover { color: var(--red); }
+
+    .empty {
+      text-align: center;
+      color: var(--text2);
+      padding: 48px 0;
+      font-size: 0.95rem;
+      line-height: 1.8;
+    }
+    .empty-icon { font-size: 3rem; display: block; margin-bottom: 12px; }
+
+    .modal-bg {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(8px);
+      z-index: 200;
       justify-content: center;
       align-items: center;
-      z-index: 100;
+      padding: 24px;
     }
+    .modal-bg.show { display: flex; }
 
-    .ringing-overlay.active {
-      display: flex;
-    }
-
-    .ringing-box {
-      background: #16213e;
-      border-radius: 20px;
-      padding: 48px 40px;
+    .modal {
+      background: var(--surface);
+      border: 1px solid rgba(255,107,157,0.3);
+      border-radius: 28px;
+      padding: 48px 36px 36px;
       text-align: center;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
-      animation: bounceIn 0.4s ease;
+      width: 100%;
+      max-width: 340px;
+      animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes modalIn {
+      from { transform: scale(0.8) translateY(20px); opacity: 0; }
+      to   { transform: scale(1) translateY(0); opacity: 1; }
     }
 
-    @keyframes bounceIn {
-      0% { transform: scale(0.8); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-
-    .bell-icon {
+    .bell-anim {
       font-size: 4rem;
       display: block;
-      margin-bottom: 16px;
-      animation: shake 0.5s ease-in-out infinite;
-    }
-
-    @keyframes shake {
-      0%, 100% { transform: rotate(0deg); }
-      25% { transform: rotate(-15deg); }
-      75% { transform: rotate(15deg); }
-    }
-
-    .ringing-box h2 {
-      font-size: 1.6rem;
-      color: #e2e8f0;
       margin-bottom: 8px;
+      animation: bellShake 0.4s ease-in-out infinite;
+      transform-origin: top center;
+    }
+    @keyframes bellShake {
+      0%,100% { transform: rotate(0deg); }
+      20%      { transform: rotate(-18deg); }
+      60%      { transform: rotate(18deg); }
     }
 
-    .ringing-box p {
-      color: #a0aec0;
-      margin-bottom: 28px;
-      font-size: 1.1rem;
+    .modal h2 {
+      font-size: 3rem;
+      font-weight: 200;
+      margin-bottom: 4px;
+      background: linear-gradient(135deg, #fff, #ff6b9d);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .modal-label {
+      color: var(--text2);
+      font-size: 0.95rem;
+      margin-bottom: 32px;
+      min-height: 20px;
     }
 
-    .btn-stop {
-      background: linear-gradient(135deg, #fc814a, #e63946);
-      color: white;
-      padding: 14px 48px;
-      border: none;
-      border-radius: 10px;
-      font-size: 1rem;
+    .modal-btns {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-snooze {
+      flex: 1;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 0.95rem;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: background 0.15s;
+    }
+    .btn-snooze:hover { background: var(--border); }
+
+    .btn-dismiss {
+      flex: 1;
+      padding: 14px;
+      border-radius: 14px;
+      border: none;
+      background: linear-gradient(135deg, #ff6b9d, #e63946);
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 16px rgba(255,107,157,0.35);
+    }
+    .btn-dismiss:hover { transform: translateY(-1px); }
+
+    .snooze-badge {
+      display: inline-block;
+      background: var(--yellow);
+      color: #000;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 50px;
+      margin-left: 6px;
+      vertical-align: middle;
     }
 
-    .btn-stop:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(252, 129, 74, 0.4);
+    .next-alarm {
+      font-size: 0.8rem;
+      color: var(--text2);
+      text-align: center;
+      margin-top: 16px;
     }
+    .next-alarm span { color: var(--accent); font-weight: 600; }
   </style>
 </head>
 <body>
 
-<div class="ringing-overlay" id="ringing-overlay">
-  <div class="ringing-box">
-    <span class="bell-icon">🔔</span>
-    <h2>アラーム！</h2>
-    <p id="ringing-time"></p>
-    <button class="btn-stop" onclick="stopAlarm()">止める</button>
-  </div>
-</div>
-
-<div class="container">
-  <h1>アラーム</h1>
+<div class="clock-wrap">
   <div id="clock">00:00:00</div>
   <div id="date"></div>
+</div>
 
-  <div class="alarm-section">
-    <label>アラーム時刻</label>
-    <input type="time" id="alarm-time" value="07:00">
+<button class="add-btn" onclick="addAlarm()">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+  アラームを追加
+</button>
+
+<div class="alarm-list" id="alarm-list"></div>
+<div class="next-alarm" id="next-alarm"></div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <span class="bell-anim">🔔</span>
+    <h2 id="modal-time">--:--</h2>
+    <div class="modal-label" id="modal-label"></div>
+    <div class="modal-btns">
+      <button class="btn-snooze" onclick="snooze()">スヌーズ<span class="snooze-badge">5分</span></button>
+      <button class="btn-dismiss" onclick="dismiss()">止める</button>
+    </div>
   </div>
-
-  <button class="btn btn-set" onclick="setAlarm()">セット</button>
-  <button class="btn btn-cancel" onclick="cancelAlarm()">キャンセル</button>
-
-  <div id="status" class="status-idle">時刻を選んでセットしてください</div>
 </div>
 
 <script>
-  let alarmTime = null;
-  let alarmAudio = null;
-  let isRinging = false;
+  const DAY_LABELS = ['日','月','火','水','木','金','土'];
+  let alarms = JSON.parse(localStorage.getItem('alarms') || '[]');
+  let ringingId = null;
+  let audioCtx = null;
+  let beepInterval = null;
+  let snoozeTimeout = null;
 
-  function createBeep() {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const pattern = [0, 300, 600, 900];
-    pattern.forEach(offset => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = 880;
-      osc.type = 'sine';
-      gain.gain.setValueAtTime(0, ctx.currentTime + offset / 1000);
-      gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + offset / 1000 + 0.05);
-      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + offset / 1000 + 0.2);
-      osc.start(ctx.currentTime + offset / 1000);
-      osc.stop(ctx.currentTime + offset / 1000 + 0.25);
-    });
-    return ctx;
+  function save() {
+    localStorage.setItem('alarms', JSON.stringify(alarms));
   }
 
-  function updateClock() {
+  function beep() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 200, 400, 700].forEach(ms => {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value = 1040; o.type = 'sine';
+      const t = audioCtx.currentTime + ms / 1000;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.35, t + 0.04);
+      g.gain.linearRampToValueAtTime(0, t + 0.18);
+      o.start(t); o.stop(t + 0.2);
+    });
+  }
+
+  function startBeeping() { beep(); beepInterval = setInterval(beep, 1400); }
+  function stopBeeping()  { clearInterval(beepInterval); beepInterval = null; }
+
+  function tick() {
     const now = new Date();
-    const h = String(now.getHours()).padStart(2, '0');
-    const m = String(now.getMinutes()).padStart(2, '0');
-    const s = String(now.getSeconds()).padStart(2, '0');
+    const h = pad(now.getHours()), m = pad(now.getMinutes()), s = pad(now.getSeconds());
     document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+    document.getElementById('date').textContent =
+      `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${DAY_LABELS[now.getDay()]}）`;
 
-    const days = ['日', '月', '火', '水', '木', '金', '土'];
-    const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
-    document.getElementById('date').textContent = dateStr;
+    if (s === '00' && ringingId === null) checkAlarms(h, m, now.getDay());
+    updateNextAlarm();
+  }
 
-    if (alarmTime && !isRinging) {
-      const current = `${h}:${m}`;
-      if (current === alarmTime && s === '00') {
-        triggerAlarm();
-      }
+  function pad(n) { return String(n).padStart(2,'0'); }
+
+  function checkAlarms(h, m, dayIdx) {
+    const current = `${h}:${m}`;
+    alarms.forEach(a => {
+      if (!a.on) return;
+      if (a.days.length > 0 && !a.days.includes(dayIdx)) return;
+      if (a.time === current) triggerAlarm(a.id);
+    });
+  }
+
+  function triggerAlarm(id) {
+    ringingId = id;
+    const a = alarms.find(x => x.id === id);
+    document.getElementById('modal-time').textContent = a ? a.time : '--:--';
+    document.getElementById('modal-label').textContent = a?.label || '';
+    document.getElementById('modal').classList.add('show');
+    document.querySelectorAll('.alarm-card').forEach(el => {
+      if (el.dataset.id === String(id)) el.classList.add('active-ring');
+    });
+    startBeeping();
+  }
+
+  function dismiss() {
+    stopBeeping();
+    document.getElementById('modal').classList.remove('show');
+    document.querySelectorAll('.alarm-card').forEach(el => el.classList.remove('active-ring'));
+    const a = alarms.find(x => x.id === ringingId);
+    if (a && a.days.length === 0) { a.on = false; save(); render(); }
+    ringingId = null;
+  }
+
+  function snooze() {
+    stopBeeping();
+    document.getElementById('modal').classList.remove('show');
+    document.querySelectorAll('.alarm-card').forEach(el => el.classList.remove('active-ring'));
+    const id = ringingId;
+    ringingId = null;
+    snoozeTimeout = setTimeout(() => triggerAlarm(id), 5 * 60 * 1000);
+  }
+
+  function updateNextAlarm() {
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    let min = Infinity, label = '';
+    alarms.filter(a => a.on).forEach(a => {
+      const [ah, am] = a.time.split(':').map(Number);
+      const alarmMin = ah * 60 + am;
+      let diff = alarmMin - nowMin;
+      if (diff <= 0) diff += 1440;
+      if (diff < min) { min = diff; label = a.time + (a.label ? ` (${a.label})` : ''); }
+    });
+    const el = document.getElementById('next-alarm');
+    if (min < Infinity) {
+      const h = Math.floor(min / 60), m = min % 60;
+      const until = h > 0 ? `${h}時間${m}分後` : `${m}分後`;
+      el.innerHTML = `次のアラームまで <span>${until} — ${label}</span>`;
+    } else {
+      el.textContent = '';
     }
   }
 
-  function setAlarm() {
-    const input = document.getElementById('alarm-time').value;
-    if (!input) {
-      showStatus('時刻を選択してください', 'status-idle');
+  function addAlarm() {
+    const now = new Date();
+    const h = pad(now.getHours()), m = pad(now.getMinutes());
+    alarms.push({ id: Date.now(), time: `${h}:${m}`, label: '', days: [], on: true });
+    save(); render();
+  }
+
+  function render() {
+    const list = document.getElementById('alarm-list');
+    if (alarms.length === 0) {
+      list.innerHTML = `<div class="empty"><span class="empty-icon">⏰</span>アラームがありません<br>上のボタンで追加してください</div>`;
       return;
     }
-    alarmTime = input;
-    showStatus(`🔔 ${input} にアラームをセット中`, 'status-set');
+    list.innerHTML = alarms.map(a => `
+      <div class="alarm-card ${a.on ? '' : 'off'}" data-id="${a.id}">
+        <div style="flex:1;min-width:0">
+          <input class="alarm-time-input" type="time" value="${a.time}"
+            onchange="updateTime(${a.id}, this.value)">
+          <input class="alarm-label-input" type="text" placeholder="ラベル（任意）"
+            value="${a.label}" onchange="updateLabel(${a.id}, this.value)">
+          <div class="alarm-days">
+            ${DAY_LABELS.map((d,i) => `
+              <button class="day-btn ${a.days.includes(i)?'on':''}"
+                onclick="toggleDay(${a.id},${i})">${d}</button>
+            `).join('')}
+          </div>
+        </div>
+        <div class="alarm-actions">
+          <label class="toggle">
+            <input type="checkbox" ${a.on?'checked':''} onchange="toggleOn(${a.id}, this.checked)">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+          <button class="delete-btn" onclick="deleteAlarm(${a.id})" title="削除">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    `).join('');
   }
 
-  function cancelAlarm() {
-    alarmTime = null;
-    showStatus('時刻を選んでセットしてください', 'status-idle');
+  function updateTime(id, val)  { const a = alarms.find(x=>x.id===id); if(a){a.time=val; save(); updateNextAlarm();} }
+  function updateLabel(id, val) { const a = alarms.find(x=>x.id===id); if(a){a.label=val; save();} }
+  function toggleOn(id, val)    { const a = alarms.find(x=>x.id===id); if(a){a.on=val; save(); render();} }
+  function deleteAlarm(id)      { alarms = alarms.filter(x=>x.id!==id); save(); render(); }
+  function toggleDay(id, day) {
+    const a = alarms.find(x=>x.id===id);
+    if (!a) return;
+    const i = a.days.indexOf(day);
+    if (i >= 0) a.days.splice(i,1); else a.days.push(day);
+    save(); render();
   }
 
-  function triggerAlarm() {
-    isRinging = true;
-    document.getElementById('ringing-time').textContent = alarmTime;
-    document.getElementById('ringing-overlay').classList.add('active');
-    showStatus('アラームが鳴っています！', 'status-ringing');
-    alarmAudio = setInterval(() => createBeep(), 1200);
-    createBeep();
-  }
-
-  function stopAlarm() {
-    isRinging = false;
-    alarmTime = null;
-    if (alarmAudio) {
-      clearInterval(alarmAudio);
-      alarmAudio = null;
-    }
-    document.getElementById('ringing-overlay').classList.remove('active');
-    document.getElementById('alarm-time').value = '07:00';
-    showStatus('時刻を選んでセットしてください', 'status-idle');
-  }
-
-  function showStatus(msg, cls) {
-    const el = document.getElementById('status');
-    el.textContent = msg;
-    el.className = cls;
-  }
-
-  setInterval(updateClock, 1000);
-  updateClock();
+  render();
+  setInterval(tick, 1000);
+  tick();
 </script>
 </body>
 </html>
