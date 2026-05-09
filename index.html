@@ -481,7 +481,7 @@
 
     <div class="filters">
       <div class="search">
-        <input id="search" type="search" placeholder="名前 / 番号で検索（例: pikachu, 25）" autocomplete="off">
+        <input id="search" type="search" placeholder="名前 / 番号で検索（例: ピカチュウ, pikachu, 25）" autocomplete="off">
       </div>
       <select class="filter-select" id="typeFilter">
         <option value="">すべてのタイプ</option>
@@ -755,13 +755,12 @@
 
     function fillCard(card, p) {
       card.classList.remove('skeleton');
-      card.querySelector('.name').textContent = p.name.replace(/-/g, ' ');
+      const sp = state.species.get(p.id);
+      const nameJa = sp && sp.name_ja ? sp.name_ja : '';
+      card.querySelector('.name').textContent = nameJa || p.name.replace(/-/g, ' ');
+      card.querySelector('.name-jp').textContent = nameJa ? p.name.replace(/-/g, ' ') : '';
       const types = card.querySelector('.types');
       types.innerHTML = p.types.map(t => `<span class="type-pill t-${t}">${TYPE_JP[t] || t}</span>`).join('');
-      const sp = state.species.get(p.id);
-      if (sp && sp.name_ja) {
-        card.querySelector('.name-jp').textContent = sp.name_ja;
-      }
     }
 
     // ── Lazy load via IntersectionObserver ─────────────────────
@@ -856,8 +855,8 @@
           fetchJson(`${API}/pokemon-species/${id}`),
         ]);
         const types = pdata.types.map(t => t.type.name);
-        $name.textContent = pdata.name.replace(/-/g, ' ');
-        $nameJp.textContent = sdata.name_ja || '';
+        $name.textContent = sdata.name_ja || pdata.name.replace(/-/g, ' ');
+        $nameJp.textContent = sdata.name_ja ? pdata.name.replace(/-/g, ' ') : '';
         $genus.textContent = sdata.genus_ja || '';
         $types.innerHTML = types.map(t => `<span class="type-pill t-${t}">${TYPE_JP[t] || t}</span>`).join('');
         $header.style.setProperty('--type-bg', `var(--type-${types[0]})`);
