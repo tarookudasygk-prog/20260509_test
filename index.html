@@ -560,7 +560,8 @@
 
     // ── Cache (in-memory + localStorage) ───────────────────────
     const memCache = new Map();
-    const LS_PREFIX = 'pkdx-v1-';
+    const inflight = new Map(); // url -> Promise (de-duplicate concurrent requests)
+    const LS_PREFIX = 'pkdx-v2-';
     const LS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
     function lsGet(key) {
@@ -577,16 +578,55 @@
       catch { /* quota */ }
     }
 
-    async function fetchJson(url) {
+    // Concurrency limiter — keep parallel network requests modest.
+    const MAX_CONCURRENT = 6;
+    let active = 0;
+    const queue = [];
+    function withLimit(fn) {
+      return new Promise((resolve, reject) => {
+        const run = () => {
+          active++;
+          fn().then(resolve, reject).finally(() => {
+            active--;
+            const next = queue.shift();
+            if (next) next();
+          });
+        };
+        if (active < MAX_CONCURRENT) run();
+        else queue.push(run);
+      });
+    }
+
+    async function fetchJson(url, retries = 3) {
       if (memCache.has(url)) return memCache.get(url);
       const ls = lsGet(url);
       if (ls) { memCache.set(url, ls); return ls; }
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Failed: ${url}`);
-      const data = await res.json();
-      memCache.set(url, data);
-      lsSet(url, slim(url, data));
-      return data;
+      if (inflight.has(url)) return inflight.get(url);
+
+      const p = withLimit(async () => {
+        let lastErr;
+        for (let i = 0; i <= retries; i++) {
+          try {
+            const res = await fetch(url);
+            if (res.status === 429 || res.status >= 500) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const slimmed = slim(url, data);
+            memCache.set(url, slimmed === data ? data : slimmed);
+            lsSet(url, slimmed);
+            return memCache.get(url);
+          } catch (e) {
+            lastErr = e;
+            if (i < retries) {
+              const delay = 400 * Math.pow(2, i) + Math.random() * 200;
+              await new Promise(r => setTimeout(r, delay));
+            }
+          }
+        }
+        throw lastErr;
+      }).finally(() => inflight.delete(url));
+      inflight.set(url, p);
+      return p;
     }
     // Trim the parts we don't need to keep localStorage small.
     function slim(url, d) {
@@ -599,9 +639,16 @@
         };
       }
       if (url.includes('/pokemon-species/')) {
-        const ja = (d.names || []).find(n => n.language.name === 'ja-Hrkt' || n.language.name === 'ja');
-        const genusJa = (d.genera || []).find(g => g.language.name === 'ja' || g.language.name === 'ja-Hrkt');
-        const flavorJa = (d.flavor_text_entries || []).find(f => f.language.name === 'ja-Hrkt' || f.language.name === 'ja');
+        // Prefer ja-Hrkt (katakana/hiragana) first; fall back to ja (may include kanji).
+        const names = d.names || [];
+        const ja = names.find(n => n.language.name === 'ja-Hrkt')
+                || names.find(n => n.language.name === 'ja');
+        const genera = d.genera || [];
+        const genusJa = genera.find(g => g.language.name === 'ja-Hrkt')
+                     || genera.find(g => g.language.name === 'ja');
+        const flavors = d.flavor_text_entries || [];
+        const flavorJa = flavors.find(f => f.language.name === 'ja-Hrkt')
+                      || flavors.find(f => f.language.name === 'ja');
         return {
           id: d.id,
           name_ja: ja ? ja.name : '',
@@ -780,34 +827,40 @@
     }
 
     async function loadCardData(id, card) {
+      const p = state.pokemon.find(x => x.id === id);
+      if (!p) return;
+
+      // Pokemon data (types/stats/etc).
       try {
-        const [pdata, sdata] = await Promise.all([
-          fetchJson(`${API}/pokemon/${id}`).catch(() => null),
-          fetchJson(`${API}/pokemon-species/${id}`).catch(() => null),
-        ]);
-        if (pdata) {
-          const p = state.pokemon.find(x => x.id === id);
-          if (p) {
-            p.name = pdata.name;
-            p.types = pdata.types.map(t => t.type.name);
-            p.height = pdata.height;
-            p.weight = pdata.weight;
-            p.abilities = pdata.abilities;
-            p.stats = pdata.stats;
-            p._loaded = true;
-          }
-        }
-        if (sdata) state.species.set(id, sdata);
-        if (pdata) {
-          const p = state.pokemon.find(x => x.id === id);
-          fillCard(card, p);
-          // Re-evaluate visibility under current filters
-          if (!matchesFilters(p)) {
-            card.style.display = 'none';
-          }
-        }
+        const pdata = await fetchJson(`${API}/pokemon/${id}`);
+        p.name = pdata.name;
+        p.types = pdata.types.map(t => t.type.name);
+        p.height = pdata.height;
+        p.weight = pdata.weight;
+        p.abilities = pdata.abilities;
+        p.stats = pdata.stats;
+        p._loaded = true;
       } catch (e) {
-        console.warn('load failed', id, e);
+        console.warn('pokemon load failed', id, e);
+      }
+
+      // Species data (Japanese name) — try with extra retries since the JP
+      // name is the primary display. If it still fails, fall back to English.
+      let sdata = null;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          sdata = await fetchJson(`${API}/pokemon-species/${id}`);
+          if (sdata && sdata.name_ja) break;
+        } catch (e) {
+          // backoff handled inside fetchJson, plus an extra wait between attempts
+          await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
+        }
+      }
+      if (sdata) state.species.set(id, sdata);
+
+      if (p._loaded) {
+        fillCard(card, p);
+        if (!matchesFilters(p)) card.style.display = 'none';
       }
     }
 
