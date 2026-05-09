@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アラームアプリ</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      text-align: center;
+      padding: 40px;
+      background: #16213e;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      width: 360px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 400;
+      color: #a0aec0;
+      margin-bottom: 24px;
+      letter-spacing: 0.1em;
+    }
+
+    #clock {
+      font-size: 4rem;
+      font-weight: 300;
+      letter-spacing: 0.05em;
+      color: #e2e8f0;
+      margin-bottom: 8px;
+    }
+
+    #date {
+      font-size: 0.9rem;
+      color: #718096;
+      margin-bottom: 40px;
+    }
+
+    .alarm-section {
+      background: #0f3460;
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .alarm-section label {
+      display: block;
+      font-size: 0.8rem;
+      color: #a0aec0;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+
+    #alarm-time {
+      width: 100%;
+      font-size: 2rem;
+      text-align: center;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid #4a5568;
+      color: #e2e8f0;
+      padding: 8px 0;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    #alarm-time:focus {
+      border-color: #667eea;
+    }
+
+    #alarm-time::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      opacity: 0.5;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.05em;
+    }
+
+    .btn-set {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      margin-bottom: 12px;
+    }
+
+    .btn-set:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-set:active {
+      transform: translateY(0);
+    }
+
+    .btn-cancel {
+      background: #2d3748;
+      color: #a0aec0;
+    }
+
+    .btn-cancel:hover {
+      background: #4a5568;
+    }
+
+    #status {
+      margin-top: 20px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+
+    .status-set {
+      background: rgba(102, 126, 234, 0.15);
+      border: 1px solid rgba(102, 126, 234, 0.3);
+      color: #a3b3f7;
+    }
+
+    .status-idle {
+      background: transparent;
+      color: #4a5568;
+    }
+
+    .status-ringing {
+      background: rgba(252, 129, 74, 0.15);
+      border: 1px solid rgba(252, 129, 74, 0.4);
+      color: #fc814a;
+      animation: pulse 0.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .ringing-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .ringing-overlay.active {
+      display: flex;
+    }
+
+    .ringing-box {
+      background: #16213e;
+      border-radius: 20px;
+      padding: 48px 40px;
+      text-align: center;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+      animation: bounceIn 0.4s ease;
+    }
+
+    @keyframes bounceIn {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .bell-icon {
+      font-size: 4rem;
+      display: block;
+      margin-bottom: 16px;
+      animation: shake 0.5s ease-in-out infinite;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-15deg); }
+      75% { transform: rotate(15deg); }
+    }
+
+    .ringing-box h2 {
+      font-size: 1.6rem;
+      color: #e2e8f0;
+      margin-bottom: 8px;
+    }
+
+    .ringing-box p {
+      color: #a0aec0;
+      margin-bottom: 28px;
+      font-size: 1.1rem;
+    }
+
+    .btn-stop {
+      background: linear-gradient(135deg, #fc814a, #e63946);
+      color: white;
+      padding: 14px 48px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-stop:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(252, 129, 74, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+<div class="ringing-overlay" id="ringing-overlay">
+  <div class="ringing-box">
+    <span class="bell-icon">🔔</span>
+    <h2>アラーム！</h2>
+    <p id="ringing-time"></p>
+    <button class="btn-stop" onclick="stopAlarm()">止める</button>
+  </div>
+</div>
+
+<div class="container">
+  <h1>アラーム</h1>
+  <div id="clock">00:00:00</div>
+  <div id="date"></div>
+
+  <div class="alarm-section">
+    <label>アラーム時刻</label>
+    <input type="time" id="alarm-time" value="07:00">
+  </div>
+
+  <button class="btn btn-set" onclick="setAlarm()">セット</button>
+  <button class="btn btn-cancel" onclick="cancelAlarm()">キャンセル</button>
+
+  <div id="status" class="status-idle">時刻を選んでセットしてください</div>
+</div>
+
+<script>
+  let alarmTime = null;
+  let alarmAudio = null;
+  let isRinging = false;
+
+  function createBeep() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const pattern = [0, 300, 600, 900];
+    pattern.forEach(offset => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0, ctx.currentTime + offset / 1000);
+      gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + offset / 1000 + 0.05);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + offset / 1000 + 0.2);
+      osc.start(ctx.currentTime + offset / 1000);
+      osc.stop(ctx.currentTime + offset / 1000 + 0.25);
+    });
+    return ctx;
+  }
+
+  function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+
+    const days = ['日', '月', '火', '水', '木', '金', '土'];
+    const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
+    document.getElementById('date').textContent = dateStr;
+
+    if (alarmTime && !isRinging) {
+      const current = `${h}:${m}`;
+      if (current === alarmTime && s === '00') {
+        triggerAlarm();
+      }
+    }
+  }
+
+  function setAlarm() {
+    const input = document.getElementById('alarm-time').value;
+    if (!input) {
+      showStatus('時刻を選択してください', 'status-idle');
+      return;
+    }
+    alarmTime = input;
+    showStatus(`🔔 ${input} にアラームをセット中`, 'status-set');
+  }
+
+  function cancelAlarm() {
+    alarmTime = null;
+    showStatus('時刻を選んでセットしてください', 'status-idle');
+  }
+
+  function triggerAlarm() {
+    isRinging = true;
+    document.getElementById('ringing-time').textContent = alarmTime;
+    document.getElementById('ringing-overlay').classList.add('active');
+    showStatus('アラームが鳴っています！', 'status-ringing');
+    alarmAudio = setInterval(() => createBeep(), 1200);
+    createBeep();
+  }
+
+  function stopAlarm() {
+    isRinging = false;
+    alarmTime = null;
+    if (alarmAudio) {
+      clearInterval(alarmAudio);
+      alarmAudio = null;
+    }
+    document.getElementById('ringing-overlay').classList.remove('active');
+    document.getElementById('alarm-time').value = '07:00';
+    showStatus('時刻を選んでセットしてください', 'status-idle');
+  }
+
+  function showStatus(msg, cls) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = cls;
+  }
+
+  setInterval(updateClock, 1000);
+  updateClock();
+</script>
+</body>
+</html>
